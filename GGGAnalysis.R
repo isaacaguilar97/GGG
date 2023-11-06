@@ -155,6 +155,7 @@ graph <- tuned_nn %>% collect_metrics() %>%
   filter(.metric=="accuracy") %>%
   ggplot(aes(x=hidden_units, y=mean)) + geom_line()
 
-save(file="./MyFile.RData", list=c("graph", "predictions", "tuned_nn", "CV_results"))
+save(file="./MyFile.RData", list=c("graph", "predictions", "tuned_nn"))
+
 
 # stopCluster(cl)
