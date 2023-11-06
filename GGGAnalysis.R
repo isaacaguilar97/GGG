@@ -97,6 +97,7 @@ testSet <- vroom('./test.csv')
 # Neural Networks ---------------------------------------------------------
 
 nn_recipe <- recipe(type~., data=trainSet) %>%
+  step_dummy(all_nominal_predictors()) %>%
   step_range(all_numeric_predictors(), min=0, max=1) #scale to [0,1]
 
 # nn_recipe <- recipe(formula=, data=) %>% 
