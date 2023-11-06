@@ -1,0 +1,355 @@
+
+R version 4.3.1 (2023-06-16) -- "Beagle Scouts"
+Copyright (C) 2023 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> # library(doParallel)
+> # 
+> # num_cores <- parallel::detectCores() #How many cores do I have?
+> # cl <- makePSOCKcluster(num_cores)
+> # registerDoParallel(cl)
+> 
+> library(tidyverse)
+── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+✔ dplyr     1.1.3     ✔ readr     2.1.4
+✔ forcats   1.0.0     ✔ stringr   1.5.0
+✔ ggplot2   3.4.4     ✔ tibble    3.2.1
+✔ lubridate 1.9.3     ✔ tidyr     1.3.0
+✔ purrr     1.0.2     
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+> library(vroom)
+
+Attaching package: ‘vroom’
+
+The following objects are masked from ‘package:readr’:
+
+    as.col_spec, col_character, col_date, col_datetime, col_double,
+    col_factor, col_guess, col_integer, col_logical, col_number,
+    col_skip, col_time, cols, cols_condense, cols_only, date_names,
+    date_names_lang, date_names_langs, default_locale, fwf_cols,
+    fwf_empty, fwf_positions, fwf_widths, locale, output_column,
+    problems, spec
+
+> library(tidymodels)
+── Attaching packages ────────────────────────────────────── tidymodels 1.1.1 ──
+✔ broom        1.0.5     ✔ rsample      1.2.0
+✔ dials        1.2.0     ✔ tune         1.1.2
+✔ infer        1.0.5     ✔ workflows    1.1.3
+✔ modeldata    1.2.0     ✔ workflowsets 1.0.1
+✔ parsnip      1.1.1     ✔ yardstick    1.2.0
+✔ recipes      1.0.8     
+── Conflicts ───────────────────────────────────────── tidymodels_conflicts() ──
+✖ scales::discard() masks purrr::discard()
+✖ dplyr::filter()   masks stats::filter()
+✖ recipes::fixed()  masks stringr::fixed()
+✖ dplyr::lag()      masks stats::lag()
+✖ yardstick::spec() masks vroom::spec(), readr::spec()
+✖ recipes::step()   masks stats::step()
+• Dig deeper into tidy modeling with R at https://www.tmwr.org
+> library(naivebayes)
+naivebayes 0.9.7 loaded
+> library(discrim)
+
+Attaching package: ‘discrim’
+
+The following object is masked from ‘package:dials’:
+
+    smoothness
+
+> library(DataExplorer)
+> 
+> 
+> # Load the data -----------------------------------------------------------
+> # setwd('~/College/Stat348/GGG')
+> 
+> # Load data
+> missSet <- vroom('./trainWithMissingValues.csv')
+Rows: 371 Columns: 7
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr (2): color, type
+dbl (5): id, bone_length, rotting_flesh, hair_length, has_soul
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+> trainSet <- vroom('./train.csv')
+Rows: 371 Columns: 7
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr (2): color, type
+dbl (5): id, bone_length, rotting_flesh, hair_length, has_soul
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+> testSet <- vroom('./test.csv')
+Rows: 529 Columns: 6
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr (1): color
+dbl (5): id, bone_length, rotting_flesh, hair_length, has_soul
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+> 
+> 
+> # # EDA ---------------------------------------------------------------------
+> # 
+> # dplyr::glimpse(trainSet)
+> # plot_missing(trainSet)
+> # plot_correlation(trainSet)
+> # plot_histogram(trainSet)
+> # GGally::ggpairs(trainSet)
+> # 
+> # # Set my recipe 
+> # my_recipe <- recipe(type~., data=trainSet) %>%
+> #   step_dummy(all_nominal_predictors()) %>%
+> #   step_normalize(all_numeric_predictors()) %>%
+> #   step_pca(all_predictors(), threshold=.9)
+> #   
+> #   
+> # 
+> # # apply the recipe to your data
+> # prep <- prep(my_recipe)
+> # imputedSet <- bake(prep, new_data = trainSet)
+> # 
+> # 
+> # # Calculate RMSE of the imputations   
+> # rmse_vec(trainSet[is.na(missSet)], imputedSet[is.na(missSet)])
+> 
+> # # Naive Bayes -------------------------------------------------------------
+> # 
+> # ## nb model
+> # nb_model <- naive_Bayes(Laplace=tune(), smoothness=tune()) %>%
+> #   set_mode("classification") %>%
+> #   set_engine("naivebayes") # install discrim library for the naivebayes eng
+> # 
+> # 
+> # # my_recipe_prep <- prep(my_recipe, data = amazon_train)
+> # # baked_data <- bake(my_recipe, new_data = NULL)
+> # 
+> # nb_wf <- workflow() %>%
+> #   add_recipe(my_recipe) %>%
+> #   add_model(nb_model)
+> # 
+> # ## Tune smoothness and Laplace here
+> # tuning_grid <- grid_regular(smoothness(),
+> #                             Laplace(),
+> #                             levels = 5)
+> # 
+> # ## Set up K-fold CV
+> # folds <- vfold_cv(trainSet, v = 5, repeats=1)
+> #
+> # ## Cross Validation
+> # CV_results <- nb_wf %>%
+> #   tune_grid(resamples=folds,
+> #             grid=tuning_grid,
+> #             metrics=metric_set(accuracy))
+> # 
+> # ## Find best tuning parameters
+> # bestTune <- CV_results %>%
+> #   select_best("accuracy")
+> # 
+> # 
+> # ## Predict
+> # predictions <- final_wf %>%
+> #   predict(new_data = testSet, type = "class")
+> # 
+> # #save(file="./MyFile.RData", list=c("amazon_predictions", "final_wf", "bestTune", "CV_results"))
+> # 
+> # # Format table
+> # testSet$type <- predictions$.pred_class
+> # results <- testSet %>%
+> #   select(id, type)
+> # 
+> # # get csv file
+> # vroom_write(results, 'GGGPredsnb.csv', delim = ",")
+> # 
+> 
+> # Neural Networks ---------------------------------------------------------
+> 
+> nn_recipe <- recipe(type~., data=trainSet) %>%
++   step_dummy(all_nominal_predictors()) %>%
++   step_range(all_numeric_predictors(), min=0, max=1) #scale to [0,1]
+> 
+> # nn_recipe <- recipe(formula=, data=) %>% 
+> #   update_role(id, new_role="id") %>% 
+> #   step_...() %>% ## Turn color to factor then dummy encode color
+> #   step_range(all_numeric_predictors(), min=0, max=1) #scale to [0,1]
+> 
+> nn_model <- mlp(hidden_units = tune(),
++                 epochs = 50, #or 100 or 250
++                 activation="relu") %>%
++   set_engine("keras", verbose=0) %>% #verbose = 0 prints off less (or nnet)
++   set_mode("classification")
+> 
+> # Workflow
+> nn_wf <- workflow() %>%
++   add_recipe(nn_recipe) %>%
++   add_model(nn_model)
+> 
+> # Tune
+> nn_tuneGrid <- grid_regular(hidden_units(range=c(1, 100)),
++                             levels=10)
+> 
+> ## Set up K-fold CV
+> folds <- vfold_cv(trainSet, v = 10, repeats=1)
+> 
+> # Cross Validation
+> tuned_nn <- nn_wf %>%
++   tune_grid(resamples=folds,
++             grid=nn_tuneGrid,
++             metrics=metric_set(accuracy))
+2023-11-06 13:52:56.156112: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2023-11-06 13:52:58.808685: I tensorflow/core/common_runtime/process_util.cc:146] Creating new thread pool with default inter op setting: 2. Tune using inter_op_parallelism_threads for best performance.
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 7ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 48ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 3ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 4ms/step
+WARNING:tensorflow:5 out of the last 9 calls to <function Model.make_predict_function.<locals>.predict_function at 0x7fe1406732e0> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has reduce_retracing=True option that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 23ms/step
+WARNING:tensorflow:6 out of the last 11 calls to <function Model.make_predict_function.<locals>.predict_function at 0x7fe140304ca0> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has reduce_retracing=True option that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 27ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 34ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 2ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 2ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 7ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 2ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 2ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 2ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 13ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 27ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 28ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 35ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - ETA: 0s2/2 [==============================] - 0s 52ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 25ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 26ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - ETA: 0s2/2 [==============================] - 0s 55ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 2ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 2ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 34ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 4ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 39ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 16ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 31ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 25ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 3ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 4ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 1ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 1ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 26ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 19ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 28ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 2ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 27ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 22ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 1ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 2ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 31ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 41ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 24ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 1ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 38ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 10ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 3ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 2ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 1ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 2ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 2ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 36ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 24ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 38ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 16ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 26ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 24ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 10ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 8ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 24ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 7ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 24ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 2ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 27ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 7ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 4ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 24ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 2ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 3ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 2ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 24ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 3ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 8ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 3ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 3ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 2ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 19ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 1ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 10ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 2ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 24ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 2ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 2ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 2ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 31ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 28ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 36ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 26ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 2ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 2ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 16ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 36ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 2ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 21ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 2ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 24ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 37ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 2ms/step
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 11ms/step
+> 
+> ## Find best tuning parameters
+> bestTune <- tuned_nn  %>%
++   select_best("accuracy")
+> 
+> # Finalize Workflow
+> final_wf <- nn_wf %>%
++   finalize_workflow(bestTune) %>%
++   fit(data=trainSet)
+> 
+> ## Predict
+> predictions <- final_wf %>%
++   predict(new_data = testSet, type = "class")
+ 1/17 [>.............................] - ETA: 0s 6/17 [=========>....................] - ETA: 0s17/17 [==============================] - 0s 5ms/step
+> 
+> # Format table
+> testSet$type <- predictions$.pred_class
+> results <- testSet %>%
++   select(id, type)
+> 
+> # get csv file
+> vroom_write(results, 'GGGPredsnn.csv', delim = ",")
+> 
+> # Plot graph
+> graph <- tuned_nn %>% collect_metrics() %>%
++   filter(.metric=="accuracy") %>%
++   ggplot(aes(x=hidden_units, y=mean)) + geom_line()
+> 
+> save(file="./MyFile.RData", list=c("graph", "predictions", "tuned_nn", "CV_results"))
+Error in save(file = "./MyFile.RData", list = c("graph", "predictions",  : 
+  object ‘CV_results’ not found
+Execution halted
