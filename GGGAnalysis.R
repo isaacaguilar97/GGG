@@ -106,9 +106,9 @@ nn_recipe <- recipe(type~., data=trainSet) %>%
 #   step_range(all_numeric_predictors(), min=0, max=1) #scale to [0,1]
 
 nn_model <- mlp(hidden_units = tune(),
-                epochs = 50, #or 100 or 250
-                activation="relu") %>%
-  set_engine("keras", verbose=0) %>% #verbose = 0 prints off less (or nnet)
+                epochs = 50 #or 100 or 250
+                ) %>%
+  set_engine("nnet") %>% #verbose = 0 prints off less (or nnet)
   set_mode("classification")
 
 # Workflow
@@ -117,7 +117,7 @@ nn_wf <- workflow() %>%
   add_model(nn_model)
 
 # Tune
-nn_tuneGrid <- grid_regular(hidden_units(range=c(1, 100)),
+nn_tuneGrid <- grid_regular(hidden_units(range=c(1, 10)),
                             levels=10)
 
 ## Set up K-fold CV
@@ -154,8 +154,8 @@ vroom_write(results, 'GGGPredsnn.csv', delim = ",")
 graph <- tuned_nn %>% collect_metrics() %>%
   filter(.metric=="accuracy") %>%
   ggplot(aes(x=hidden_units, y=mean)) + geom_line()
-
-save(file="./MyFile.RData", list=c("graph", "predictions", "tuned_nn"))
+graph
+save(file="./MyFile.RData", list=c("predictions", "tuned_nn"))
 
 
 # stopCluster(cl)
